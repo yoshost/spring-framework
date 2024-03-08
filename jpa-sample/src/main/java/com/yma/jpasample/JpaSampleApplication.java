@@ -34,8 +34,8 @@ public class JpaSampleApplication {
 
 			var author2 = Author.builder()
 					.firstName("John2")
-					.lastName("Wick2")
-					.email("john@wicked2.com")
+					.lastName("Kale")
+					.email("john@kale.com")
 					.build();
 
 			authorRepository.save(author2);

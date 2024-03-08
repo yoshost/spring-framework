@@ -1,7 +1,9 @@
 package com.yma.jpasample;
 
 import com.yma.jpasample.model.Author;
+import com.yma.jpasample.model.Video;
 import com.yma.jpasample.repositories.AuthorRepository;
+import com.yma.jpasample.repositories.VideoRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -16,7 +18,9 @@ public class JpaSampleApplication {
 
 
 	@Bean
-	public CommandLineRunner commandLineRunner(AuthorRepository authorRepository){
+	public CommandLineRunner commandLineRunner(
+			AuthorRepository authorRepository,
+			VideoRepository videoRepository){
 
 		return  args -> {
 			var author = Author.builder()
@@ -35,6 +39,13 @@ public class JpaSampleApplication {
 					.build();
 
 			authorRepository.save(author2);
+
+			//Inheritance in database
+			var video = new Video();
+			video.setLength(10);
+			video.setName("Sample Video");
+
+			videoRepository.save(video);
 		};
     }
 

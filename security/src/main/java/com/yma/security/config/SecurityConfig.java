@@ -1,49 +1,56 @@
 package com.yma.security.config;
 
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractAuthenticationFilterConfigurer;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
+    @Autowired
+    private CustomUserDetailsServiceImpl userDetailsService;
+
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
+    @Order(1)
+    public SecurityFilterChain h2ConsoleFilterChain(HttpSecurity http) throws Exception {
 
-        UserDetails adminUser = User.withUsername("admin_user")
-                .password(passwordEncoder.encode("admin"))
-                .roles("ADMIN")
+        return http
+                .securityMatcher(new AntPathRequestMatcher("/h2-console/**"))
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .csrf(csrf -> csrf.ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**")))
+                .headers(header -> header.frameOptions(withDefaults()).disable())
                 .build();
-
-        UserDetails generalUser = User.withUsername("user1")
-                .password(passwordEncoder.encode("user123"))
-                .roles("USER")
-                .build();
-
-        return new InMemoryUserDetailsManager(adminUser, generalUser);
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
+    @Order(2)
+    public SecurityFilterChain endPointsFilterChain(HttpSecurity http) throws Exception {
         return http
-                .authorizeHttpRequests((requests) -> requests
+//                .securityMatcher(new AntPathRequestMatcher("/api/**"))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/welcome").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll
-                ).build();
+                        .anyRequest().authenticated())
+                .userDetailsService(userDetailsService)
+                .formLogin(withDefaults())
+                .httpBasic(withDefaults())
+                .build();
     }
 
     @Bean
